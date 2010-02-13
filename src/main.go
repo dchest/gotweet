@@ -41,14 +41,14 @@ func checkForError(s string, err os.Error) string {
 }
 
 func Usage() {
-	fmt.Fprintf(os.Stderr, "Usage: %s [options...] <action> ...\n"
+	fmt.Fprintf(os.Stderr, "Usage: %s [options...] <action> ...\n" +
 						   "Options:\n", os.Args[0]);
 	flag.PrintDefaults();
-	fmt.Fprintf(os.Stderr, "Actions:\n"
-		"  post		Post status update (followed by status). Alias: p\n"
-		"  user		Show user timeline. Alias: u\n"
-		"  friends	Show friends timeline. Alias: (nothing)\n"
-		"  mentions	Show mentions. Alias: @\n"
+	fmt.Fprintf(os.Stderr, "Actions:\n" +
+		"  post		Post status update (followed by status). Alias: p\n" +
+		"  user		Show user timeline. Alias: u\n" +
+		"  friends	Show friends timeline. Alias: (nothing)\n" +
+		"  mentions	Show mentions. Alias: @\n" +
 		"  public	Show public timeline\n");
 }
 
@@ -83,6 +83,8 @@ func main() {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err);
 			os.Exit(1);			
+		} else {
+			fmt.Printf("OK\n")
 		}
 	}
 	os.Exit(0);

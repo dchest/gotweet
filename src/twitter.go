@@ -16,8 +16,8 @@ package twitter
 
 import (
 	"./http_auth";
-	"io";
 	"fmt";
+	"io/ioutil";
 	"json";
 	"os";
 	"regexp";
@@ -73,8 +73,8 @@ func (t *Twitter) getTimeline(url string) (out string, err os.Error) {
 		return
 	}
 
-	b, _ := io.ReadAll(r.Body);
-	r.Body.Close();
+	b, _ := ioutil.ReadAll(r.Body);
+        r.Body.Close();
 
 	tweets := make([]Tweet, 20);
 	json.Unmarshal(string(b), tweets);
@@ -105,11 +105,12 @@ func (t *Twitter) post(url, s string) (our string, err os.Error) {
 		"application/x-www-form-urlencoded", bb);
 
 	if err != nil {
+		fmt.Printf("wtferr %q", err)
 		return
 	}
 
-	b, _ := io.ReadAll(r.Body);
-	r.Body.Close();
+	b, _ := ioutil.ReadAll(r.Body);
+        r.Body.Close();
 
 	if r.StatusCode != 200 {
 		err = os.ErrorString("Twitter returned: " + r.Status);

@@ -1,16 +1,18 @@
+include $(GOROOT)/src/Make.$(GOARCH)
+
 all: gotwitter
 
-gotwitter: http_auth.6 twitter.6 main.6
-					 6l -o gotweet http_auth.6 twitter.6 main.6
+gotwitter: http_auth.$(O) twitter.$(O) main.$(O)
+					 $(LD) -o gotweet main.$(O)
 
-main.6: main.go
-	6g main.go
+main.$(O): main.go
+	$(GC) main.go
 
-http_auth.6: http_auth.go
-	6g http_auth.go
+http_auth.$(O): http_auth.go
+	$(GC) http_auth.go
 
-twitter.6: twitter.go
-	6g twitter.go
+twitter.$(O): twitter.go
+	$(GC) twitter.go
 
 clean:
-	rm *.6 gotweet
+	rm *.$(O) gotweet

@@ -22,7 +22,6 @@ import (
 	"strings";
 	"net";
 	"bufio";
-	"strconv";
 	"fmt";
 	"bytes";
 )
@@ -44,39 +43,45 @@ func (e *badStringError) String() string	{ return fmt.Sprintf("%s %q", e.what, e
 func hasPort(s string) bool	{ return strings.LastIndex(s, ":") > strings.LastIndex(s, "]") }
 
 func send(req *http.Request) (resp *http.Response, err os.Error) {
-	addr := req.URL.Host;
+	if req.URL.Scheme != "http" {
+		return nil, &badStringError{"unsupported protocol scheme", req.URL.Scheme}
+	}
+
+	addr := req.URL.Host
 	if !hasPort(addr) {
 		addr += ":http"
 	}
-	conn, err := net.Dial("tcp", "", addr);
+	info := req.URL.Userinfo
+	if len(info) > 0 {
+		enc := base64.URLEncoding
+		encoded := make([]byte, enc.EncodedLen(len(info)))
+		enc.Encode(encoded, strings.Bytes(info))
+		if req.Header == nil {
+			req.Header = make(map[string]string)
+		}
+		req.Header["Authorization"] = "Basic " + string(encoded)
+	}
+	conn, err := net.Dial("tcp", "", addr)
 	if err != nil {
 		return nil, err
 	}
 
-	err = req.Write(conn);
+	err = req.Write(conn)
 	if err != nil {
-		conn.Close();
-		return nil, err;
+		conn.Close()
+		return nil, err
 	}
 
-	reader := bufio.NewReader(conn);
-	resp, err = http.ReadResponse(reader);
+	reader := bufio.NewReader(conn)
+	resp, err = http.ReadResponse(reader, req.Method)
 	if err != nil {
-		conn.Close();
-		return nil, err;
+		conn.Close()
+		return nil, err
 	}
 
-	r := io.Reader(reader);
-	if v := resp.GetHeader("Content-Length"); v != "" {
-		n, err := strconv.Atoi64(v);
-		if err != nil {
-			return nil, &badStringError{"invalid Content-Length", v}
-		}
-		r = io.LimitReader(r, n);
-	}
-	resp.Body = readClose{r, conn};
+	resp.Body = readClose{resp.Body, conn}
 
-	return;
+	return
 }
 
 func encodedUsernameAndPassword(user, pwd string) string {
@@ -108,7 +113,7 @@ func Get(url, user, pwd string) (r *http.Response, err os.Error) {
 func Post(url, user, pwd, bodyType string, body io.Reader) (r *http.Response, err os.Error) {
 	var req http.Request;
 	req.Method = "POST";
-	req.Body = body;
+	req.Body = nopCloser{body};
 	req.Header = map[string]string{
 		"Content-Type": bodyType,
 		"Transfer-Encoding": "chunked",
@@ -124,3 +129,9 @@ func Post(url, user, pwd, bodyType string, body io.Reader) (r *http.Response, er
 
 	return send(&req);
 }
+
+type nopCloser struct {
+        io.Reader
+}
+
+func (nopCloser) Close() os.Error { return nil }
