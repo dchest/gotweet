@@ -15,10 +15,10 @@
 package main
 
 import (
-	"os";
-	"flag";
-	"fmt";
-	"./twitter";
+	"os"
+	"flag"
+	"fmt"
+	"./twitter"
 )
 
 var username = flag.String("u", "", "username (Twitter login)")
@@ -26,66 +26,67 @@ var password = flag.String("p", "", "password")
 
 func requireLogin() {
 	if *username == "" || *password == "" {
-		flag.Usage();
-		fmt.Fprintf(os.Stderr, "Username and password required for this function!\n");
-		os.Exit(1);
+		flag.Usage()
+		fmt.Fprintf(os.Stderr, "Username and password required for this function!\n")
+		os.Exit(1)
 	}
 }
 
 func checkForError(s string, err os.Error) string {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err);
-		os.Exit(1);
+		fmt.Fprintf(os.Stderr, "%s\n", err)
+		os.Exit(1)
 	}
-	return s;
+	return s
 }
 
 func Usage() {
-	fmt.Fprintf(os.Stderr, "Usage: %s [options...] <action> ...\n" +
-						   "Options:\n", os.Args[0]);
-	flag.PrintDefaults();
-	fmt.Fprintf(os.Stderr, "Actions:\n" +
-		"  post		Post status update (followed by status). Alias: p\n" +
-		"  user		Show user timeline. Alias: u\n" +
-		"  friends	Show friends timeline. Alias: (nothing)\n" +
-		"  mentions	Show mentions. Alias: @\n" +
-		"  public	Show public timeline\n");
+	fmt.Fprintf(os.Stderr, "Usage: %s [options...] <action> ...\n"+
+		"Options:\n",
+		os.Args[0])
+	flag.PrintDefaults()
+	fmt.Fprintf(os.Stderr, "Actions:\n"+
+		"  post		Post status update (followed by status). Alias: p\n"+
+		"  user		Show user timeline. Alias: u\n"+
+		"  friends	Show friends timeline. Alias: (nothing)\n"+
+		"  mentions	Show mentions. Alias: @\n"+
+		"  public	Show public timeline\n")
 }
 
 func main() {
-	flag.Usage = Usage;
-	flag.Parse();
+	flag.Usage = Usage
+	flag.Parse()
 
-	tw := twitter.NewTwitter(*username, *password);
+	tw := twitter.NewTwitter(*username, *password)
 
 	switch flag.Arg(0) {
 	case "@", "mentions":
-		requireLogin();
-		os.Stdout.WriteString(checkForError(tw.Mentions()));
+		requireLogin()
+		os.Stdout.WriteString(checkForError(tw.Mentions()))
 	case "", "friends":
-		requireLogin();
-		os.Stdout.WriteString(checkForError(tw.FriendsTimeline()));
+		requireLogin()
+		os.Stdout.WriteString(checkForError(tw.FriendsTimeline()))
 	case "u", "user":
-		requireLogin();
-		os.Stdout.WriteString(checkForError(tw.UserTimeline()));
+		requireLogin()
+		os.Stdout.WriteString(checkForError(tw.UserTimeline()))
 	case "public":
 		os.Stdout.WriteString(checkForError(tw.PublicTimeline()))
 	case "p", "post":
-		requireLogin();
-		s := "";
+		requireLogin()
+		s := ""
 		for i := 1; i < flag.NArg(); i++ {
 			if i > 1 {
 				s += " "
 			}
-			s += flag.Arg(i);
+			s += flag.Arg(i)
 		}
-		err := tw.UpdateStatus(s);
+		err := tw.UpdateStatus(s)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s\n", err);
-			os.Exit(1);			
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			os.Exit(1)
 		} else {
 			fmt.Printf("OK\n")
 		}
 	}
-	os.Exit(0);
+	os.Exit(0)
 }

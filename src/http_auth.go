@@ -15,32 +15,32 @@
 package http_auth
 
 import (
-	"http";
-	"encoding/base64";
-	"io";
-	"os";
-	"strings";
-	"net";
-	"bufio";
-	"fmt";
-	"bytes";
+	"http"
+	"encoding/base64"
+	"io"
+	"os"
+	"strings"
+	"net"
+	"bufio"
+	"fmt"
+	"bytes"
 )
 
 type readClose struct {
-	io.Reader;
-	io.Closer;
+	io.Reader
+	io.Closer
 }
 
 type badStringError struct {
-	what	string;
-	str	string;
+	what string
+	str  string
 }
 
-func (e *badStringError) String() string	{ return fmt.Sprintf("%s %q", e.what, e.str) }
+func (e *badStringError) String() string { return fmt.Sprintf("%s %q", e.what, e.str) }
 
 // Given a string of the form "host", "host:port", or "[ipv6::address]:port",
 // return true if the string includes a port.
-func hasPort(s string) bool	{ return strings.LastIndex(s, ":") > strings.LastIndex(s, "]") }
+func hasPort(s string) bool { return strings.LastIndex(s, ":") > strings.LastIndex(s, "]") }
 
 func send(req *http.Request) (resp *http.Response, err os.Error) {
 	if req.URL.Scheme != "http" {
@@ -85,25 +85,25 @@ func send(req *http.Request) (resp *http.Response, err os.Error) {
 }
 
 func encodedUsernameAndPassword(user, pwd string) string {
-	bb := &bytes.Buffer{};
-	encoder := base64.NewEncoder(base64.StdEncoding, bb);
-	encoder.Write(strings.Bytes(user + ":" + pwd));
-	encoder.Close();
-	return bb.String();
+	bb := &bytes.Buffer{}
+	encoder := base64.NewEncoder(base64.StdEncoding, bb)
+	encoder.Write(strings.Bytes(user + ":" + pwd))
+	encoder.Close()
+	return bb.String()
 }
 
 func Get(url, user, pwd string) (r *http.Response, err os.Error) {
-	var req http.Request;
+	var req http.Request
 
 	req.Header = map[string]string{"Authorization": "Basic " +
-		encodedUsernameAndPassword(user, pwd)};
+		encodedUsernameAndPassword(user, pwd)}
 	if req.URL, err = http.ParseURL(url); err != nil {
 		return
 	}
 	if r, err = send(&req); err != nil {
 		return
 	}
-	return;
+	return
 }
 
 
@@ -111,27 +111,27 @@ func Get(url, user, pwd string) (r *http.Response, err os.Error) {
 //
 // Caller should close r.Body when done reading it.
 func Post(url, user, pwd, bodyType string, body io.Reader) (r *http.Response, err os.Error) {
-	var req http.Request;
-	req.Method = "POST";
-	req.Body = nopCloser{body};
+	var req http.Request
+	req.Method = "POST"
+	req.Body = nopCloser{body}
 	req.Header = map[string]string{
 		"Content-Type": bodyType,
 		"Transfer-Encoding": "chunked",
 		"X-Twitter-Client": "gotweet",
 		"X-Twitter-Version": "0.1",
 		"Authorization": "Basic " + encodedUsernameAndPassword(user, pwd),
-	};
+	}
 
-	req.URL, err = http.ParseURL(url);
+	req.URL, err = http.ParseURL(url)
 	if err != nil {
 		return nil, err
 	}
 
-	return send(&req);
+	return send(&req)
 }
 
 type nopCloser struct {
-        io.Reader
+	io.Reader
 }
 
 func (nopCloser) Close() os.Error { return nil }

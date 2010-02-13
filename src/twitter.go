@@ -15,75 +15,75 @@
 package twitter
 
 import (
-	"./http_auth";
-	"fmt";
-	"io/ioutil";
-	"json";
-	"os";
-	"regexp";
-	"http";
-	"bytes";
-	"strings";
+	"./http_auth"
+	"fmt"
+	"io/ioutil"
+	"json"
+	"os"
+	"regexp"
+	"http"
+	"bytes"
+	"strings"
 )
 
 type Twitter struct {
-	Account Account;
+	Account Account
 }
 
 type Account struct {
-	Username	string;
-	Password	string;
+	Username string
+	Password string
 }
 
 type User struct {
-	Screen_name string;
+	Screen_name string
 }
 
 type Tweet struct {
-	Text	string;
-	Source	string;
-	User	User;
+	Text   string
+	Source string
+	User   User
 }
 
 const (
-	mentionsURL		= "http://twitter.com/statuses/mentions.json";
-	friendsTimelineURL	= "http://twitter.com/statuses/friends_timeline.json";
-	userTimelineURL		= "http://twitter.com/statuses/user_timeline";	// no .json!
-	publicTimelineURL	= "http://twitter.com/statuses/public_timeline.json";
-	updateURL		= "http://twitter.com/statuses/update.json";
+	mentionsURL        = "http://twitter.com/statuses/mentions.json"
+	friendsTimelineURL = "http://twitter.com/statuses/friends_timeline.json"
+	userTimelineURL    = "http://twitter.com/statuses/user_timeline" // no .json!
+	publicTimelineURL  = "http://twitter.com/statuses/public_timeline.json"
+	updateURL          = "http://twitter.com/statuses/update.json"
 )
 
 func NewTwitter(user, pwd string) *Twitter {
-	var acc Account;
-	acc.Username = user;
-	acc.Password = pwd;
-	return &Twitter{acc};
+	var acc Account
+	acc.Username = user
+	acc.Password = pwd
+	return &Twitter{acc}
 }
 
 func (t *Twitter) getTimeline(url string) (out string, err os.Error) {
-	var r *http.Response;	
-	r, err = http_auth.Get(url, t.Account.Username, t.Account.Password);
+	var r *http.Response
+	r, err = http_auth.Get(url, t.Account.Username, t.Account.Password)
 
 	if err != nil {
 		return
 	}
 
 	if r.StatusCode != 200 {
-		err = os.ErrorString("Twitter returned: " + r.Status);
+		err = os.ErrorString("Twitter returned: " + r.Status)
 		return
 	}
 
-	b, _ := ioutil.ReadAll(r.Body);
-        r.Body.Close();
+	b, _ := ioutil.ReadAll(r.Body)
+	r.Body.Close()
 
-	tweets := make([]Tweet, 20);
-	json.Unmarshal(string(b), tweets);
+	tweets := make([]Tweet, 20)
+	json.Unmarshal(string(b), tweets)
 
-	re, _ := regexp.Compile("<a[^>]*>(.*)</a>");
+	re, _ := regexp.Compile("<a[^>]*>(.*)</a>")
 	for _, t := range tweets {
 		// Source may be a link: <a href="...">source</a>
 		// Extract text of the link with regexp.
-		matches := re.MatchStrings(t.Source);
+		matches := re.MatchStrings(t.Source)
 		if matches != nil && len(matches) > 0 {
 			t.Source = matches[1]
 		}
@@ -93,35 +93,35 @@ func (t *Twitter) getTimeline(url string) (out string, err os.Error) {
 				t.Text, t.Source)
 		}
 	}
-	return;
+	return
 }
 
 func (t *Twitter) post(url, s string) (our string, err os.Error) {
-	bb := &bytes.Buffer{};
-	bb.Write(strings.Bytes(s));
+	bb := &bytes.Buffer{}
+	bb.Write(strings.Bytes(s))
 
-	var r *http.Response;	
+	var r *http.Response
 	r, err = http_auth.Post(url, t.Account.Username, t.Account.Password,
-		"application/x-www-form-urlencoded", bb);
+		"application/x-www-form-urlencoded", bb)
 
 	if err != nil {
 		fmt.Printf("wtferr %q", err)
 		return
 	}
 
-	b, _ := ioutil.ReadAll(r.Body);
-        r.Body.Close();
+	b, _ := ioutil.ReadAll(r.Body)
+	r.Body.Close()
 
 	if r.StatusCode != 200 {
-		err = os.ErrorString("Twitter returned: " + r.Status);
+		err = os.ErrorString("Twitter returned: " + r.Status)
 		return
 	}
 
-	return string(b), nil;
+	return string(b), nil
 }
 
 
-func (t *Twitter) Mentions() (string, os.Error) { 
+func (t *Twitter) Mentions() (string, os.Error) {
 	return t.getTimeline(mentionsURL)
 }
 
@@ -133,12 +133,12 @@ func (t *Twitter) UserTimeline() (string, os.Error) {
 	return t.getTimeline(userTimelineURL + "/" + t.Account.Username + ".json")
 }
 
-func (t *Twitter) PublicTimeline() (string, os.Error) { 
-	return t.getTimeline(publicTimelineURL) 
+func (t *Twitter) PublicTimeline() (string, os.Error) {
+	return t.getTimeline(publicTimelineURL)
 }
 
 func (t *Twitter) UpdateStatus(s string) os.Error {
-	s = "status=" + http.URLEscape(s);
-	_, err := t.post(updateURL, s);
-	return err;
+	s = "status=" + http.URLEscape(s)
+	_, err := t.post(updateURL, s)
+	return err
 }
